@@ -23,9 +23,12 @@ class SnippetLoader
 		$theme = Theme::getActiveTheme();
 		$controller = CmsController::getController();
 
-		// Make an unique alias for this snippet based on its name and parameters
-		$snippetInfo['code'] = uniqid($snippetInfo['code'] . '-' . md5(serialize($snippetInfo['properties'])) . '-');
-
+		// Make an unique alias for this snippet based on its name and parameters or use code override
+		if ($codeOverride = self::getCodeOverride($snippetInfo['properties'])){
+		  $snippetInfo['code'] = $codeOverride;	
+		} else {
+		  $snippetInfo['code'] = uniqid($snippetInfo['code'] . '-' . md5(serialize($snippetInfo['properties'])) . '-');
+		}
 		self::attachComponentSnippetToController($snippetInfo, $controller, true);
 		self::cacheSnippet($snippetInfo['code'], $snippetInfo);
 
@@ -160,16 +163,25 @@ class SnippetLoader
 		return $cached;
 	}
 
+
+					
 	/**
 	 * Get a cache key for the current page.
 	 *
 	 * @return string
 	 */
-	protected static function getMapCacheKey()
-    {
-		$theme = Theme::getActiveTheme();
-		$page = CmsController::getController()->getPage();
+    protected static function getMapCacheKey() {
+	$theme = Theme::getActiveTheme();
+	$page = CmsController::getController()->getPage();
 
         return crc32($theme->getPath() . $page['url']) . '-dynamic-snippet-map';
+    }
+						
+    private static function getCodeOverride($properties) {
+	if (array_key_exists('code_override', $properties) && $properties['code_override']){
+	  return $properties['code_override'];	
+	}
+        
+        return null;
     }
 }
